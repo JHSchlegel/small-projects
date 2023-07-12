@@ -1,0 +1,25 @@
+---
+title: "Bayesian Data Analysis"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(rstanarm)
+library(rstan)
+library(tidyverse)
+```
+stan_glm uses Hamiltonian MCMC
+```{r}
+data(women)
+
+gaussian_glm_mcmc <- stan_glm(formula = height ~ weight, data = women,
+                              algorithm = "sampling", refresh = 0)
+summary(gaussian_glm_mcmc)
+
+gaussian_glm_mle <- glm(formula = height ~ weight, data = women)
+summary(gaussian_glm_mle)
+```
+
+Bayesian: parameter random, interval fixed
+Frequentist: parameter fixed, interval random
