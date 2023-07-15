@@ -155,13 +155,53 @@ pp_check(quadratic_glm, "boxplot", nreps = 10) # already first 15 samples very g
 
 ```{r}
 # MCMC plots
-mcmc_intervals(quadratic_glm, pars = "weight", prob_outer = .95)
-mcmc_areas_ridges(quadratic_glm, pars = "weight", prob_outer = .95)
+mcmc_intervals(quadratic_glm, pars = "weight", prob = .95)
+mcmc_areas_ridges(quadratic_glm, pars = "weight", prob = .95)
 ```
 
 
 
 
+```{r}
+data(state.x77)
+
+glm_multi <- stan_glm(data = as.data.frame(state.x77), formula = Murder ~., cores = 32, chains = 32, refresh = 0)
+mcmc_intervals(glm_multi, prob = .95)
+mcmc_trace(glm_multi)
+mcmc_acf(glm_multi, pars = "Population")
+glm_multi %>%   
+  rhat() %>%
+  mcmc_rhat() +
+  yaxis_text()
+# all values are below 1.05 suggesting no convergence issues
+
+glm_multi %>% 
+  neff_ratio() %>% 
+  mcmc_neff() +
+  yaxis_text()
+# ratio of effective sample size to total sample size -> lighter/higher is better
 
 
+library(coda)
+As.mcmc.list(glm_multi$stanfit) %>% gelman.plot()
+
+```
+
+
+```{r}
+library(effects)
+data(mtcars)
+
+# with no interactions
+no_interaction <- glm(mpg ~ hp + wt, data = mtcars)
+summary(no_interaction)
+# with interactions
+interaction <- glm(mpg ~ hp + wt + hp:wt, data = mtcars)
+summary(interaction)
+
+
+model.matrix(~ hp + wt + hp:wt, data = mtcars)
+
+plot(effect("hp:wt", interaction), multiline = TRUE)
+```
 
