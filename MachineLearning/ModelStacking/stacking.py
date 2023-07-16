@@ -33,10 +33,14 @@ X_train_std = sc.fit_transform(X_train)
 X_test_std = sc.transform(X_test)
 
 
-def pipeline(X_train_std, X_test_std, y_train, y_test, model, param_grid, cv = 5, 
+def pipeline(X_train_std, X_test_std, y_train, y_test, model, param_grid, gridsearch = False, cv = 5, 
              scoring_fit = 'balanced_accuracy', scoring_test = balanced_accuracy_score,
              do_probabilities = False, n_iter = 1):
-    gs = RandomizedSearchCV(estimator = model, param_distributions= param_grid, cv = cv, scoring = scoring_fit, 
+    if gridsearch:
+        gs = GridSearchCV(estimator = model, param_grid = param_grid, cv = cv, scoring = scoring_fit,
+                          n_jobs = -1, verbose = 2)
+    else:
+        gs = RandomizedSearchCV(estimator = model, param_distributions= param_grid, cv = cv, scoring = scoring_fit, 
                       n_jobs = -1, verbose = 2, n_iter = n_iter) # verbose = 2 also shows score
     fitted_model = gs.fit(X_train_std, y_train)
     best_model = fitted_model.best_estimator_
@@ -72,7 +76,7 @@ grid_parameters = [
 models_pred_scores = []
 for i, model in enumerate(models_to_train):
     params = grid_parameters[i]
-    res = pipeline(X_train_std, X_test_std, y_train, y_test, model, params)
+    res = pipeline(X_train_std, X_test_std, y_train, y_test, model, params, gridsearch=True)
     models_pred_scores.append(res)
     
     
@@ -80,7 +84,7 @@ for i, model in enumerate(models_to_train):
 base_models = [('random_forest', models_pred_scores[1][0]),
                ('xgboost', models_pred_scores[0][0]),
                ('svm', SVC()), 
-               ('qda', QDA()),
+               #('qda', QDA()),
                ('knn', KNeighborsClassifier(n_neighbors=15))]
 
 meta_model = LogisticRegressionCV()
@@ -97,7 +101,7 @@ stacking_model = StackingClassifier(estimators=base_models,
 models_dict = {'random_forest': models_pred_scores[1][0],
                'xgboost': models_pred_scores[0][0],
                'svm': SVC(), 
-               'qda': QDA(),
+               #'qda': QDA(),
                'knn': KNeighborsClassifier(n_neighbors=15, n_jobs = -1),
                'stacked': stacking_model
         }
