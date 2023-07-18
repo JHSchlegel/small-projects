@@ -1,5 +1,6 @@
 
 from sklearn.datasets import make_classification
+import pandas as pd
 
 
 X, y = make_classification(n_samples=50000, 
@@ -13,11 +14,12 @@ X, y = make_classification(n_samples=50000,
 
 
 if __name__ == "__main__":
+    scores = pd.read_csv("scores.csv")
+    scores_long = pd.read_csv("scores_long.csv")
     import matplotlib.pyplot as plt
     import seaborn as sns 
     import numpy as np
     import pandas as pd
-    from stacking import scores_long
     print(type(X))
     data = pd.DataFrame.from_records(X)
     data["y"] = y
