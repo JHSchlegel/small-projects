@@ -163,3 +163,4 @@ cython_debug/
 .gz
 .ubyte
 Data/
+data/
