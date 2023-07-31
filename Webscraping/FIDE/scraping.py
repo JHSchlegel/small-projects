@@ -1,5 +1,4 @@
 import requests
-from bs4 import BeautifulSoup as bs
 from selenium import webdriver
 # from selenium.webdriver.chrome.service import Service
 # service only available for later versions
