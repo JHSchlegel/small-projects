@@ -5,7 +5,7 @@
 //calculate covariance matrix using Eigen
 Eigen::MatrixXd cov_cpp(const Eigen::MatrixXd& X) {
   Eigen::MatrixXd centered = X.rowwise() - X.colwise().mean();
-  Eigen::MatrixXd cov = (centered.adjoint() * centered) / double(X.rows() - 1);
+  Eigen::MatrixXd cov = (centered.adjoint() * centered) / int(X.rows() - 1);
   return cov;
 }
 
