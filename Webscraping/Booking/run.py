@@ -12,6 +12,7 @@ try:
         bot.set_adults(3)
         bot.click_search()
         bot.apply_filtrations(3,4,5)
+        #bot.refresh() # refresh page to grab data properly
         bot.get_report()
         bot.get_links()
         # bot.apply_filtration(

@@ -2,23 +2,28 @@
 # all the data that we will need
 import time 
 import numpy as np
-from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.remote.webdriver import WebDriver
 
 
 class BookingReport:
-    def __init__(self, boxes_section_element: WebElement):
-        self.boxes_section_element = boxes_section_element
-        self.deal_boxes = self.get_deal_boxes()
-    def get_deal_boxes(self):
-        """Extract all the deals
-        """
-        return self.boxes_section_element.find_elements_by_class_name(
-            'd20f4628d0'
-        )
-    
+    def __init__(self, driver:WebDriver):
+        if not isinstance(driver, WebDriver):
+            raise Exception("driver is not a Booking instance")
+        else:
+            self.driver = driver
     def get_titles(self):
         """Extract hotel titles
         """
-        return [box.find_element_by_class_name(
-            'a4225678b2'
-        ).get_attribute('innerHTML') for box in self.deal_boxes]
+        time.sleep(np.random.uniform(2.5, 3.5))
+        deal_boxes = self.driver.find_elements_by_class_name(
+            'fcab3ed991 a23c043802'
+        )
+        collection = []
+        print(deal_boxes)
+        print(len(deal_boxes))
+        print([box.text for box in deal_boxes])
+        print([box.get_attribute("innerHTML").strip() for box in deal_boxes])
+        print([box.get_attribute("innerText").strip() for box in deal_boxes])
+        
+        #collection.append([hotel_name, hotel_price, hotel_score])
+        return [box.get_attribute("innerHTML").strip() for box in deal_boxes]

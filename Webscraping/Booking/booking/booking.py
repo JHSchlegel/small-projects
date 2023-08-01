@@ -166,10 +166,11 @@ class Booking(webdriver.Chrome):
         filtration.sort_price_lowest_first()
         
     def get_report(self):
-        hotel_boxes = self.find_element_by_xpath(
-            '//*[@id="bodyconstraint-inner"]/div[2]/div/div[2]/div[3]/div[2]/div[2]'#'search_results_table'
-            )
-        report = BookingReport(hotel_boxes)
+        # hotel_boxes = self.find_element_by_xpath(
+        #     '//*[@id="bodyconstraint-inner"]/div[2]/div/div[2]/div[3]/div[2]/div[2]'#'search_results_table'
+        #     )
+        print(self.find_elements_by_class_name('fcab3ed991 a23c043802'))
+        report = BookingReport(driver = self)
         print(report.get_titles())
     
     def get_links(self):
