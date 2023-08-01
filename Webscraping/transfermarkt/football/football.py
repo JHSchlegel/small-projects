@@ -10,16 +10,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-
+import sys
+print(sys.path)
 
 class Transfer(webdriver.Chrome):
-    def __init__(self, driver_path=r"/usr/bin/google-chrome", teardown=False):
-        self.driver_path = driver_path
-        isExist = os.path.exists(self.driver_path)
-        print(isExist)
-        self.teardown = teardown
-        os.environ['PATH'] += self.driver_path
-        super(Transfer, self).__init__()
+    def __init__(self, options = Options()):
+        super(Transfer, self).__init__(ChromeDriverManager().install(), options = options)
         self.implicitly_wait(15)
         self.maximize_window()
 
