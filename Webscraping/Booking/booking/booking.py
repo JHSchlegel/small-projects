@@ -11,11 +11,16 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import booking.constants as const
 from booking.booking_filtration import BookingFiltration
+from booking.booking_report import BookingReport
 
 
 class Booking(webdriver.Chrome):
-    def __init__(self, options = Options(), teardown = False):
+    def __init__(self, headless = False, teardown = False):
         self.teardown = teardown
+        options = Options()
+        # if headless is True, then run in headless mode i.e. without browser
+        if headless:
+            options.add_argument("--headless")
         super(Booking, self).__init__(ChromeDriverManager().install(), options = options)
         self.implicitly_wait(15)
         self.maximize_window()
@@ -47,7 +52,7 @@ class Booking(webdriver.Chrome):
                     ))
             popup.click()
             print("Popup closed")
-        except:
+        except Exception as e:
             print("No popup")
             
             
@@ -152,6 +157,33 @@ class Booking(webdriver.Chrome):
         search_button.click()
         print("Search button clicked")
         
-    def apply_filtrations(self):
+    def apply_filtrations(self, *star_values):
+        """Apply star rating and sort by lowest price
+        """
+        time.sleep(np.random.uniform(5, 10))
         filtration = BookingFiltration(driver = self) 
-        filtration.apply_star_rating()
+        filtration.apply_star_rating(*star_values)
+        filtration.sort_price_lowest_first()
+        
+    def get_report(self):
+        hotel_boxes = self.find_element_by_xpath(
+            '//*[@id="bodyconstraint-inner"]/div[2]/div/div[2]/div[3]/div[2]/div[2]'#'search_results_table'
+            )
+        report = BookingReport(hotel_boxes)
+        print(report.get_titles())
+    
+    def get_links(self):
+        """Get all the hotel links
+        """
+        time.sleep(np.random.uniform(5, 10))
+        # get all the hotel elements
+        hotel_elements = self.find_elements_by_xpath('//a[@class = "e13098a59f"]')
+        # get all the links
+        hotel_links = [hotel_element.get_attribute('href') for hotel_element in hotel_elements]
+        print(len(hotel_elements))
+        return hotel_links
+    # def click_link(self):
+    #     links = self.get_links()
+    #     for link in links:
+            
+    
