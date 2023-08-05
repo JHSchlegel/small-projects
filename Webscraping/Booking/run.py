@@ -3,15 +3,15 @@ from booking.booking import Booking
 # with Booking(teardown = True) as bot:
 # if browser should be closed in the end
 try:
-    with Booking(teardown = False) as bot:
+    with Booking(teardown = True) as bot:
         bot.land_first_page()
         bot.close_popup()
         #bot.set_currency(currency = 'CHF')
         bot.set_destination('New York')
-        bot.set_dates(check_in_date = '2023-08-01', check_out_date = '2023-08-23')
+        bot.set_dates(check_in_date = '2023-08-01', check_out_date = '2023-08-14')
         bot.set_adults(3)
         bot.click_search()
-        bot.apply_filtrations(3,4,5)
+        #bot.apply_filtrations(3,4,5)
         #bot.refresh() # refresh page to grab data properly
         bot.get_report()
         bot.get_links()

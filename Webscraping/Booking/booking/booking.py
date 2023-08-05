@@ -45,6 +45,7 @@ class Booking(webdriver.Chrome):
         """Close popup if it appears
         """
         try:
+            time.sleep(np.random.uniform(1, 3))
             # wait until popup is available and switch to it
             popup = WebDriverWait(self, 15).until(
                 EC.presence_of_element_located(
@@ -62,6 +63,7 @@ class Booking(webdriver.Chrome):
         Args:
             currency (string, optional): Name of currency. Defaults to None.
         """
+        time.sleep(np.random.uniform(1, 3))
         currency_element = self.find_element_by_xpath(
             '//*[@id="b2indexPage"]/div[2]/div/header/nav[1]/div[2]/span[1]/button'
         )
@@ -77,6 +79,7 @@ class Booking(webdriver.Chrome):
         Args:
             destination (string): Name of destination
         """
+        time.sleep(np.random.uniform(1, 3))
         search_field = self.find_element_by_xpath("//input[@id=':rc:']")
         # first clear field in case there is some text
         search_field.clear()
@@ -94,6 +97,7 @@ class Booking(webdriver.Chrome):
             check_in_date (string): date of check-in
             check_out_date (string): date of check-out
         """
+        time.sleep(np.random.uniform(1, 3))
         check_in_element = self.find_element_by_css_selector(
             f'span[data-date="{check_in_date}"]'
         )
@@ -163,16 +167,8 @@ class Booking(webdriver.Chrome):
         time.sleep(np.random.uniform(5, 10))
         filtration = BookingFiltration(driver = self) 
         filtration.apply_star_rating(*star_values)
-        filtration.sort_price_lowest_first()
+        # filtration.sort_price_lowest_first()
         
-    def get_report(self):
-        # hotel_boxes = self.find_element_by_xpath(
-        #     '//*[@id="bodyconstraint-inner"]/div[2]/div/div[2]/div[3]/div[2]/div[2]'#'search_results_table'
-        #     )
-        print(self.find_elements_by_class_name('fcab3ed991 a23c043802'))
-        report = BookingReport(driver = self)
-        print(report.get_titles())
-    
     def get_links(self):
         """Get all the hotel links
         """
@@ -180,11 +176,35 @@ class Booking(webdriver.Chrome):
         # get all the hotel elements
         hotel_elements = self.find_elements_by_xpath('//a[@class = "e13098a59f"]')
         # get all the links
-        hotel_links = [hotel_element.get_attribute('href') for hotel_element in hotel_elements]
+        #hotel_links = [hotel_element.get_attribute('href') for hotel_element in hotel_elements]
         print(len(hotel_elements))
-        return hotel_links
-    # def click_link(self):
-    #     links = self.get_links()
-    #     for link in links:
+        return hotel_elements
+    
+    def get_report(self):
+        links = self.get_links()
+        print(links)
+        names = []
+        for link in links:
+            time.sleep(np.random.uniform(1, 3))
+            # wait until link can be clicked
+            WebDriverWait(self, 15).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, '//a[@class = "e13098a59f"]')
+                    ))
+            # self.find_element_by_xpath(f'//a[@href = {link}]').click()
+            link.click()
+            # go back to previous page
+            time.sleep(np.random.uniform(1, 3))
+            # close the newly opened tab
+            self.close()
+        return None
             
+        # hotel_boxes = self.find_element_by_xpath(
+        #     '//*[@id="bodyconstraint-inner"]/div[2]/div/div[2]/div[3]/div[2]/div[2]'#'search_results_table'
+        #     )
+        # print(self.find_elements_by_class_name('fcab3ed991 a23c043802'))
+        # report = BookingReport(driver = self)
+        # print(report.get_titles())
+    
+
     
