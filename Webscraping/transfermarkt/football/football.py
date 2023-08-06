@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import pandas as pd
-import os
+import logging
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -35,7 +35,7 @@ class Transfer(webdriver.Chrome):
     def __exit__(self, exc_type, exc_val, exc_tb):
         # if teardown quit, else leave driver open
         if self.teardown:
-            print("Exiting...")
+            logging.info("Exiting...")
             time.sleep(5)
             self.quit()
             
@@ -59,9 +59,9 @@ class Transfer(webdriver.Chrome):
                     (By.XPATH, "//button[@title='Zustimmen']")
                     )
                 ).click()
-            print("Cookies accepted")
+            logging.info("Cookies accepted")
         except:
-            print("No cookies pop-up") 
+            logging.info("No cookies pop-up") 
     def get_report(self):
         link_elements = self.find_elements_by_xpath(
             "//td[contains(@class, 'no-border-links hauptlink')]/a"
@@ -103,12 +103,12 @@ class Transfer(webdriver.Chrome):
             # print([value.text for value in values_elements])
             page[clubs[i]] = players
             if i == 1:
-                print(page[clubs[i]])
+                logging.info(page[clubs[i]])
             time.sleep(np.random.uniform(1, 3))
             self.get(const.BASE_URL)
             # self.back()
-            print(f"Finished {clubs[i]}")
-        print("Finished page")
+            logging.info(f"Finished {clubs[i]}")
+        logging.info("Finished page")
         return page
     def click_next(self):
         pages = {}
@@ -126,7 +126,7 @@ class Transfer(webdriver.Chrome):
             time.sleep(np.random.uniform(3,5))
             self.get(str(page_number.get_attribute('href')))
             pages[str(i+1)] = self.get_report()
-            print(f"Finished page {i+1}")
+            logging.info(f"Finished page {i+1}")
         return pages
     # TODO: add method to save data to json file
     # TODO: add class to convert json file to pandas dataframe and unnest wider
