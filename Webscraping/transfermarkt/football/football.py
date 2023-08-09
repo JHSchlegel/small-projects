@@ -68,8 +68,23 @@ class Transfer(webdriver.Chrome):
             )
         links = [str(link.get_attribute('href')) for link in link_elements]
         clubs = [link.text for link in link_elements]
+        leagues = [league.text for league in self.find_elements_by_xpath(
+            '//*[@id="yw1"]/table/tbody/tr[1]/td[4]/a'
+            )
+        ]
+        logging.info(leagues)
         page = {}
         for i, link in enumerate(links):
+            time.sleep(np.random.uniform(3, 5))
+            players_links = [str(link.get_attribute('href')) for link in
+                             self.find_elements_by_xpath(
+                "//td[@class = 'hauptlink']/a"
+            )]
+            
+            player_names = [link.text for link in
+                             self.find_elements_by_xpath(
+                "//td[@class = 'hauptlink']/a"
+            )]
             WebDriverWait(self, 20).until(
                 EC.element_to_be_clickable(
                     (By.XPATH, "//td[@class = 'no-border-links hauptlink']/a")
@@ -78,9 +93,7 @@ class Transfer(webdriver.Chrome):
             time.sleep(np.random.uniform(3, 5))
             self.get(link)
             #link.click()
-            players_elements = self.find_elements_by_xpath(
-                "//td[@class = 'hauptlink']"
-                )
+
             nrs_elements = self.find_elements_by_xpath(
                 "//td/div[contains(@class,'tm-shirt-number')]"
                 )
