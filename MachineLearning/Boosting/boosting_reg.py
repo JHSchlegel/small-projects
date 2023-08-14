@@ -17,6 +17,7 @@ X, y = make_regression(n_samples = 500, n_features = 20, noise = 50,
                        random_state= 42)
 logging.info(f"X shape:{X.shape}, y shape: {y.shape}")
 
+print(pd.DataFrame(X).columns)
 
 # Split data into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2)
@@ -47,6 +48,11 @@ feat_imp = permutation_importance(
     model, X_test, y_test, n_repeats=10, random_state=42, n_jobs=20
 )
 
-plt.boxplot(feat_imp.importances.T, vert=False)
+sorted_idx = feat_imp.importances_mean.argsort()
+plt.boxplot(
+    feat_imp.importances[sorted_idx].T, 
+    labels = np.array(pd.DataFrame(X).columns)[sorted_idx], 
+    vert=False
+)
 plt.title("Permutation Importances (test set)")
 plt.savefig("permutation_importance.png")
