@@ -1,11 +1,15 @@
 library(ggplot2)
-library(svglite)
+library(microbenchmark)
+library(tidyverse)
 library(rpapers) # my own package for theme
-set_paper_plot_specs()
+library(plotly)
+
 
 # install.packages("TMB")
 library(TMB) # use TMB to massively speed up MLE 
 data(UKDriverDeaths)
+set.seed(123)
+# idx <- sample(1:length(UKDriverDeaths), 1E6, replace = TRUE)
 drivers.deaths <- as.numeric(UKDriverDeaths)
 head(drivers.deaths)
 
@@ -32,7 +36,7 @@ res <- optim(
 # save the optimized parameters
 opt_pars <- res$par
 names(opt_pars) <- c("mu", "sigma")
-
+print(opt_pars)
 
 
 # TMB Version of the MLE ---------------------------------------------
@@ -61,6 +65,8 @@ res_cpp <- optim(
 # save the optimized parameters
 opt_pars_cpp <- res_cpp$par
 names(opt_pars_cpp) <- c("mu", "sigma")
+print(opt_pars_cpp)
+
 
 # Plot the results ---------------------------------------------------
 ## Histogram of the data
@@ -72,48 +78,92 @@ hist(
 curve(dnorm(x, mean=opt_pars["mu"], sd=opt_pars["sigma"]), 
       col="red", lwd=2, add=TRUE)
 
-
-
+## Plotting the log-likelihood surface
 # create a sequence of values for the x-axis
-mu <- seq(1400, 2000, length.out=1000)
-sigma <- seq(200, 400, length.out=1000)
+mu <- seq(1400, 2000, length.out=500)
+sigma <- seq(200, 400, length.out=500)
+grid <- expand_grid(mu=mu, sigma=sigma)
 
+z <- apply(grid, 1, neglogL, data=drivers.deaths)
+grid$z <- z
+
+# manually find the optimal parameters
+idx <- which.min(z)
+grid[idx, ]
+
+# plot the log-likelihood surface
+p <- ggplot(grid, aes(x=mu, y=sigma, z=z)) + 
+    geom_contour_filled(bins = 20) + 
+    geom_point(aes(x=opt_pars["mu"], y=opt_pars["sigma"]), color="red", size=3) +
+    labs(title="Log-Likelihood Surface", x="mu", y="sigma")
+
+# save the plot
+ggsave("log_likelihood_surface.pdf", plot = p, width=6, height=4, dpi=300)
+
+
+## Interactive plotly plots
+# Contour plot
+plot_ly(grid, x = ~mu, y = ~sigma, z = ~z, type = "contour", 
+        contours = list(
+            coloring = "heatmap",
+            showlabels = TRUE,
+            labelfont = list(
+                family = "Raleway",
+                size = 12,
+                color = "white"
+            )
+        )
+    )
+
+# plot the log-likelihood surface in 3D
+plot_ly(z = ~xtabs(z ~ mu + sigma, data = grid)) %>% add_surface(
+        colors = c("#132B43", "#56B1F7", "#FFFFFF", "#E6842A", "#132B43"),
+        colorbar = list(
+            title = "Log-Likelihood",
+            titleside = "top",
+            tickmode = "array",
+            tickvals = c(-1000, -500, 0, 500, 1000),
+            ticktext = c("-1000", "-500", "0", "500", "1000"),
+            ticks = "outside"
+        ),
+        lighting = list(
+            ambient = 0.95,
+            diffuse = 0.99,
+            specular = 0.99,
+            roughness = 0.99
+        )
+        # hoverinfo = "text",
+        # hovertext = ~paste0("mu: ", mu, "<br>sigma: ", sigma, "<br>z: ", z)
+) %>% 
+    layout(
+        scene = list(
+            xaxis = list(title = "mu"),
+            yaxis = list(title = "sigma"),
+            zaxis = list(title = "Log-Likelihood")
+        )
+    )
 
 # Benchmarking -------------------------------------------------------
-library(microbenchmark)
+set_paper_plot_specs()
 # benchmark R and TMB versions of the MLE
-# bench <- microbenchmark(
-#     R_MLE = optim(
-#         par=c(100, 10), 
-#         fn=neglogL, 
-#         data=drivers.deaths, 
-#         method="L-BFGS-B",
-#         lower=c(0, 0.01)
-#     ),
-#     TMB_MLE = optim(
-#         par=c(100, 10), 
-#         fn=neglogL_cpp$fn, 
-#         gr=neglogL_cpp$gr, 
-#         method="L-BFGS-B",
-#         lower=c(0, 0.01)
-#     ),
-#     times = 1000L
-# )
-
 bench <- microbenchmark(
-    R_MLE = nlminb(
-        start=c(100, 10), 
-        objective=neglogL, 
+    R_MLE = optim(
+        par=c(1000, 100), 
+        fn=neglogL, 
         data=drivers.deaths, 
+        method="L-BFGS-B",
         lower=c(0, 0.01)
     ),
-    TMB_MLE = nlminb(
-        start = neglogL_cpp$par, 
-        objective=neglogL_cpp$fn, 
-        gradient=neglogL_cpp$gr, 
+    TMB_MLE = optim(
+        par=c(1000, 100), 
+        fn=neglogL_cpp$fn, 
+        gr=neglogL_cpp$gr, 
+        method="L-BFGS-B",
         lower=c(0, 0.01)
     ),
+    times = 100L
 )
+
 
 # get summary
 summary(bench)
@@ -134,4 +184,6 @@ p_bench <- ggplot(bench_df, aes(x=expr, y=time, fill = expr, color = expr)) +
 
 ggsave("benchmark_MLE.pdf", plot = p_bench, width=6, height=4, dpi=300)
 
-# we see that TMB was slower; most likely due to the low number of samples
+# for low sample sizes,  TMB version performs worse than
+# the base R version; when using very large sample sizes, it performs considerably
+# better than the base R version
