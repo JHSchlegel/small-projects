@@ -132,6 +132,8 @@ NumericVector rowVar(NumericMatrix x)
 }
 
 
+double get_prob_vec_input
+
 
 using namespace RcppParallel;
 

@@ -1,4 +1,5 @@
 library(RcppEigen)
+library(RcppParallel)
 library(RcppNumerical)
 library(Rcpp)
 library(RcppArmadillo)
@@ -6,20 +7,21 @@ library(RcppGSL)
 library(patchwork)
 library(microbenchmark)
 library(gridExtra)
-
+library(purrr)
+library(tidyverse)
 
 sourceCpp("./seroprev.cpp")
+RcppParallel::setThreadOptions(numThreads = defaultNumThreads() - 4)
 
 
 
-beta <- matrix(rnorm(100000), ncol = 5000)
-pop_cat_mat <- matrix(rnorm(100000,0, 0.005), ncol = 5000)
-sigma <- rexp(100000)
+beta <- matrix(rnorm(10000000), ncol = 5000)
+pop_cat_mat <- matrix(rnorm(10000000,0, 0.005), ncol = 5000)
+sigma <- rexp(10000000)
 
 
 gridr <- expand_grid(i = 1:nrow(pop_cat_mat), j = 1:nrow(beta))
 gridcpp <- expand_grid(i = 0:(nrow(pop_cat_mat)-1), j = 0:(nrow(beta)-1))
-
 
 get_sero(99, 5, beta, pop_cat_mat, sigma)
 
@@ -58,6 +60,10 @@ all.equal(base, cpp_map_r)
 # rdist and gsl are equal
 all.equal(base, cpp_map_gsl)
 
+grid_mat <- as.matrix(gridcpp)
+mode(grid_mat) <- "integer"
+get_probs_parallel(grid_mat, beta = beta, pop_cat_mat= pop_cat_mat, sigma = sigma, use_rdist = TRUE)
+
 # microbenchmark seroprev
 res_sero <- microbenchmark(
   base = map2_dbl(gridr$i, gridr$j, get_prob),
@@ -65,6 +71,7 @@ res_sero <- microbenchmark(
   cpp_gsldist = get_probs_cpp(nrow(beta), nrow(pop_cat_mat), beta = beta, pop_cat_mat= pop_cat_mat, sigma = sigma),
   cpp_map_r = map2_dbl(gridcpp$i, gridcpp$j, get_prob_cpp, beta = beta, pop_cat_mat = pop_cat_mat, sigma = sigma, use_rdist = TRUE),
   cpp_map_gsl = map2_dbl(gridcpp$i, gridcpp$j, get_prob_cpp, beta = beta, pop_cat_mat = pop_cat_mat, sigma = sigma),
+  cpp_parallel = get_probs_parallel(grid_mat, beta = beta, pop_cat_mat= pop_cat_mat, sigma = sigma, use_rdist = TRUE),
   times = 100
 )
 
@@ -102,3 +109,6 @@ p_sero_grid <- (p_all + p_cpp) / p_tab_ser
 # label all panels of p_sero_grid alphabetically 
 p_sero_grid <- p_sero_grid + plot_annotation(tag_levels = "A")
 ggsave("p_sero_grid.pdf", p_sero_grid, width = 30, height = 20, units = "cm")
+
+
+get_probs_parallel(grid_mat, beta = beta, pop_cat_mat= pop_cat_mat, sigma = sigma, use_rdist = TRUE)

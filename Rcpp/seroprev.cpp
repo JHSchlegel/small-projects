@@ -7,7 +7,8 @@
 #include <gsl/gsl_integration.h>
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_cdf.h>
-
+//[[Rcpp::depends(RcppParallel)]]
+#include <RcppParallel.h>
 
 
 //[[Rcpp::depends(RcppArmadillo)]]
@@ -18,13 +19,13 @@ double get_pred(int i, int j, arma::mat beta, arma::mat pop_cat_mat) {
   return arma::dot(beta.row(j), pop_cat_mat.row(i)) ;
 };
 
-// #include <RcppNumerical.h>
+// #include <RcppRcpp::Numerical.h>
 // using namespace Numer;
 
 // #include <Rcpp.h>
 
 
-// //[[Rcpp::depends(RcppNumerical)]]
+// //[[Rcpp::depends(RcppRcpp::Numerical)]]
 // //[[Rcpp::depends(RcppEigen)]]
 
 
@@ -48,11 +49,11 @@ double get_pred(int i, int j, arma::mat beta, arma::mat pop_cat_mat) {
 
 
 // //[[Rcpp::export]]
-// Rcpp::NumericVector get_sero(int i_max,int j_max,  arma::mat beta, arma::mat pop_cat_mat, arma::vec sigma)
+// Rcpp::Rcpp::NumericVector get_sero(int i_max,int j_max,  arma::mat beta, arma::mat pop_cat_mat, arma::vec sigma)
 // {
 //   double err_est;
 //   int err_code;
-//   Rcpp::NumericVector res(i_max * j_max);
+//   Rcpp::Rcpp::NumericVector res(i_max * j_max);
 //   for(int i = 0; i != i_max; ++i) {
 //     for(int j = 0; j != j_max; ++j) {
 //     double mu = get_pred(i, j, beta, pop_cat_mat);
@@ -156,6 +157,9 @@ arma::vec sigma, bool use_rdist = false)
   return res;
 };
 
+
+
+
 //[[Rcpp::export]]
 //get_prob_cpp calculates the probability of seropositivity for a given population category
 double get_prob_cpp(int i, int j, arma::mat beta, arma::mat pop_cat_mat, 
@@ -169,3 +173,53 @@ double get_prob_cpp(int i, int j, arma::mat beta, arma::mat pop_cat_mat,
     return gsl_integrate_gsldist(mu, sigma(j));
   }
 };
+
+
+
+using namespace RcppParallel;
+
+// parallel version of get_prob_cpp using RcppParallel
+//define worker class
+struct Prob: public Worker 
+{
+  //input
+  const RMatrix<int> input;
+  const RMatrix<double> beta;
+  const RMatrix<double> pop_cat_mat;
+  const RVector<double> sigma;
+  bool use_rdist;
+
+  //output
+  RVector<double> res;
+  //initialize input and output
+  Prob(const Rcpp::IntegerMatrix input, const Rcpp::NumericMatrix beta, const Rcpp::NumericMatrix pop_cat_mat, 
+       const Rcpp::NumericVector sigma, bool use_rdist, Rcpp::NumericVector res) 
+    : input(input), beta(beta), pop_cat_mat(pop_cat_mat), sigma(sigma), use_rdist(use_rdist), res(res) {}
+  //operator to be called from parallelFor
+  void operator()(std::size_t begin, std::size_t end) {
+    for(std::size_t i = begin; i < end; i++) {
+      //get row of input matrix
+      RMatrix<int>::Row x = input.row(i);
+      // extract elements from row
+      int k = x[0];
+      int l = x[1];
+      //get probability
+      res[i] = get_prob_cpp(k, l, Rcpp::as<arma::mat>(Rcpp::wrap(beta)), Rcpp::as<arma::mat>(Rcpp::wrap(pop_cat_mat)), Rcpp::as<arma::vec>(Rcpp::wrap(sigma)), use_rdist);
+    }
+  }
+};
+
+//[[Rcpp::export]]
+// function to be called from R that takes Rcpp::Integer Matrix as input
+// and returns a Rcpp::NumericVector
+Rcpp::NumericVector get_probs_parallel(Rcpp::IntegerMatrix input, Rcpp::NumericMatrix beta, Rcpp::NumericMatrix pop_cat_mat, 
+                             Rcpp::NumericVector sigma, bool use_rdist = false) {
+  //initialize output vector
+  Rcpp::NumericVector res(input.nrow());
+  //create instance of worker
+  Prob prob(input, beta, pop_cat_mat, sigma, use_rdist, res);
+  //call parallelFor to do the work
+  parallelFor(0, input.nrow(), prob);
+  //return output vector
+  return res;
+}
