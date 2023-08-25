@@ -3,7 +3,6 @@
 
 # Packages and Presets ----
 
-
 library(qrng)
 library(tidyverse)
 library(cowplot)
@@ -11,6 +10,56 @@ library(ggthemes)
 
 theme_set(ggthemes::theme_economist())
 
+# Halton Sequence ----
+#' @description Halton sequence is a quasi random number generator. It is a low discrepancy
+#' sequence. It is a deterministic sequence. It is a sequence of numbers in the
+#' unit interval that are equidistributed. 
+#' @param k index of the sequence
+#' @param b The base of the sequence
+halton <- function(k, b){
+  res <- 0
+  f <- 1
+  while (k > 0){
+    f <- f / b
+    res <- res + f * (k %% b)
+    k <- floor(k / b)
+  }
+  return(res)
+}
+
+sapply(1:1000, halton, b = 2) %>% 
+data.frame() %>% 
+  ggplot(aes(x = .)) + 
+  geom_histogram(bins = 20) +
+  labs(x = "x", y = "Frequency", title = "Halton Sequence") +
+  theme()
+
+
+#' Halton sequence using only integer numbers to 
+#' make it robust against round off errors
+halton_int <- function(nsim, b){
+  res <- numeric(nsim)
+  n <- 0
+  d <- 1
+  for (i in 1:nsim){
+    x <- d - n
+    if (x == 1){
+      n <- 1 
+      d <- d * b
+    }
+    else {
+      y <- d %/% b
+      while (x <= y) {
+        y <- y %/% b
+      }
+      n <- (b + 1) * y - x
+    }
+  res[i] <- n / d
+  }
+  return(res)
+} 
+
+plot(halton_int(1000, 2), halton_int(1000, 3))
 
 # Plotting Quasi and Pseudo Random Numbers ----
 set.seed(123)
