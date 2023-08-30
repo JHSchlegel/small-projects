@@ -79,13 +79,11 @@ bayesplot::mcmc_pairs(GP_air,
 
 params <- rstan::extract(GP_air)
 
-
 pdf("./Simulations/Plots/GP_air_predictions.pdf", width = 6, height = 4)
-
 plot(AirPassengers, xlim = c(range(time(AirPassengers))[1], 1965.238), main = "Predictions stemming from a latent GP model")
 for (i in 1:50) {
   lines(seq(range(time(AirPassengers))[1], 1965.238, length.out = 50), params$y2[i,], col = "grey50")
 }
 lines(seq(range(time(AirPassengers))[1], 1965.238, length.out = 50), apply(params$y2, 2, median), col = "firebrick")
-
 dev.off()
+
