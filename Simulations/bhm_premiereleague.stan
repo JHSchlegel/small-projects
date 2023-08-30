@@ -58,4 +58,7 @@ generated quantities {
   
   theta1new = exp(home_adv + attack[home_new] - defense[away_new]);
   theta2new = exp(attack[away_new] - defense[home_new]);
+  
+  score1new = poisson_rng(theta1new); //draw Poisson RV for score
+  score2new = poisson_rng(theta2new);
 }

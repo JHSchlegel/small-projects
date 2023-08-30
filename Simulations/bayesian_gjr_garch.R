@@ -6,7 +6,7 @@ library(hexbin)
 library(tidyverse)
 library(cowplot)
 
-load("./Simulations/gjr_garch.rds")
+# load("./Simulations/gjr_garch.rds")
 
 ts <- data.frame(year <- time(EuStockMarkets))
 stocks <- data.frame(EuStockMarkets)
@@ -38,7 +38,7 @@ gjr_garch.post <- sampling(gjr_garch_model,
                         T = length(y), 
                         r = y, 
                         sigma1 = 0.1, 
-                        indT = ifelse(y[length(y)] >= y[length(y)-1], 0, 1)
+                        ind1 = ifelse(y[length(y)] >= y[length(y)-1], 0, 1)
                       ),
                       chains = numcores-4,
                       iter = 10000,
@@ -51,7 +51,7 @@ gjr_garch.post <- sampling(gjr_garch_model,
                       ),
                       save_warmup = F,
                       seed = 42)
-save(gjr_garch.post, file = "./Simulations/gjr_garch.rds")
+# save(gjr_garch.post, file = "./Simulations/gjr_garch.rds")
 # trace plots
 par(mfrow = c(3, 2))
 rstan::traceplot(gjr_garch.post, 
@@ -133,14 +133,14 @@ sigma <- garch.params$sigma
 ind <- garch.params$ind
 
 # predicted volatility
-pred.gjr_garch <- sapply(3:1860, function(x) 
+pred.gjr_garch <- sapply(2:1860, function(x) 
   mu.mean + sqrt(alpha0.mean + (alpha1.mean + gamma.mean * 
-                             ind.mean[x-2]) * (y[x-1] - mu.mean)^2 + 
+                             ind.mean[x-1]) * (y[x-1] - mu.mean)^2 + 
               beta1.mean * sigma.mean[x-1]^2)
   )
 
 VaR.gjr_garch <- sapply(3:1860, 
-        function(x) quantile(mu + sqrt(alpha0 + (alpha1 + gamma * ind[, x-2]) * 
+        function(x) quantile(mu + sqrt(alpha0 + (alpha1 + gamma * ind[, x-1]) * 
                                          (y[x-1] - mu)^2 + 
                                          beta1 * sigma[, x-1]^2), c(.99, .95)))
 
