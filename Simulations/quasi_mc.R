@@ -28,7 +28,7 @@ halton <- function(k, b){
 }
 
 sapply(1:1000, halton, b = 2) %>% 
-data.frame() %>% 
+  data.frame() %>% 
   ggplot(aes(x = .)) + 
   geom_histogram(bins = 20) +
   labs(x = "x", y = "Frequency", title = "Halton Sequence") +
