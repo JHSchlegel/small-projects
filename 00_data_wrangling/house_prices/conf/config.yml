@@ -1,0 +1,10 @@
+data:
+  input: data/data.csv
+
+catboost:
+  iterations: 1000
+  learning_rate: 0.05
+  depth: 6
+  loss_function: "RMSE"
+  verbose: 0
+  random_state: 42
