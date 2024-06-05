@@ -1,0 +1,49 @@
+---
+title: "Mobile Price Classification"
+author: "Jan Schlegel"
+date: "2024-05-06"
+format:
+    html:
+        toc: true
+        toc-expand: 2
+        toc-title: "Table of Contents"
+        number-sections: true
+        code-fold: true
+        code-tools:
+            source: true
+            toggle: true
+        caption: "Code Options"
+        code-block-bg: true
+        code-block-border-left: "#191970"
+        highlight-style: monochrome
+        echo: true
+        warning: false
+        embed-resources: true
+jupyter: 
+    python3
+---
+
+# Packages and Presets
+```{python}
+import kaggle
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+# Data Loading
+We will make use of the `kaggle API` to download the dataset (see [here](https://www.kaggle.com/docs/api) for a tutorial). The dataset is available on Kaggle under the name `iabhishekofficial/mobile-price-classification`.
+```{python}
+dataset = 'iabhishekofficial/mobile-price-classification'
+# Download the dataset
+kaggle.api.dataset_download_files(dataset, path='datasets/', unzip=True)
+```
+
+Loading the dataset into a pandas DataFrame:
+```{python}
+train = pd.read_csv('datasets/train.csv')
+test = pd.read_csv('datasets/test.csv')
+```
+
+# EDA
