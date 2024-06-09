@@ -26,10 +26,25 @@ jupyter:
 # Packages and Presets
 ```{python}
 import kaggle
+import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import missingno as msno
+# mizani formatters:
+from mizani.formatters import comma_format, percent_format, currency_format
+from tqdm.notebook import tqdm, trange
+from skimpy import skim, clean_columns
+
+import plotnine as pn
+
+import warnings
+warnings.filterwarnings("ignore") # sanest python user
+
+# change max display of rows and columns
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.max_rows', 10)
 ```
 
 # Data Loading
@@ -47,3 +62,116 @@ test = pd.read_csv('datasets/test.csv')
 ```
 
 # EDA
+Some descriptive statistics of the dataset:
+```{python}
+train.info()
+```
+```{python}
+train.head()
+```
+
+```{python}
+train.shape
+```
+
+```{python}
+skim(train)
+```
+
+It is evident that some features are categorical and some are numerical. The target variable is `price_range`.
+```{python}
+msno.matrix(train, figsize=(10, 5), fontsize=12)
+```
+
+There are no missing values in the dataset.
+
+We move on to the visualization of all marginal distributions of the features:
+
+```{python}
+(
+    pn.ggplot(data=train.select_dtypes(include="number").melt(), mapping=pn.aes(x="value"))
+    + pn.geom_histogram(bins=50, fill="midnightblue")
+    + pn.facet_wrap("~ variable", scales="free")
+    + pn.scale_x_continuous(labels=comma_format())
+    + pn.scale_y_continuous(labels=comma_format())
+)
+```
+
+Let's visualize the categorical features:
+
+```{python}
+# get list of columns with less than 5 unique values
+unique_values = train.nunique()
+factor_cols = [col for col in train.columns if unique_values[col] < 10]
+
+n_cols = 2
+n_rows = math.ceil(len(factor_cols)/n_cols)
+
+fig, axs = plt.subplots(n_rows, n_cols, figsize=(7, 15))
+axs = axs.flatten()
+
+colnames = [
+    "Blue",
+    "Dual Sim",
+    "Four G",
+    "Number of Cores",
+    "Three G",
+    "Touch Screen",
+    "Wifi",
+    "Price Range"
+]
+
+for i, col in enumerate(factor_cols):
+    
+    ax = axs[i]
+    
+    # order the bars
+    order = train[col].value_counts().index
+    sns.countplot(
+        data=train, x=col, ax=ax, order=order,
+        palette="viridis", width = 0.8
+    )
+    
+    # remove legend
+    ax.legend([],[], frameon=False)
+    # remove x label
+    ax.set_xlabel("")
+    # set title
+    ax.set_title(f"{colnames[i]}")
+    # adding percentages
+    # see https://stackoverflow.com/questions/76240680/how-do-i-add-a-percentage-to-a-countplot
+    for idx, _ in enumerate(ax.containers):
+        ax.bar_label(ax.containers[idx], fmt=lambda x: f"{x/train.shape[0] * 100:.2f}%", fontsize=10)
+    ax.set_ylim(0, ax.get_ylim()[1] * 1.08)
+axs[-1].axis("off")
+plt.tight_layout(w_pad=2)
+```
+
+It is apparent that most columns (including the target variable) are balanced. The only exception is the "Three G" column, which has a higher proportion of "1" values.
+
+Additionally, let's have a look at the numerical features:
+
+```{python, fig-height = 8, fig-width = 8}
+numeric_cols = [col for col in train.columns if col not in factor_cols]
+p = sns.pairplot(
+    train[numeric_cols + ['price_range']],
+    hue='price_range',
+    palette='colorblind',
+    # axis font size 8
+    plot_kws=dict(s=10, edgecolor=None),
+    # smaller dot size in off diagonal plots
+
+)
+```
+
+
+The marginal distributions of most of the numerical features looks similar for the different price ranges. Only for the `ram` and `battery_power` features, the distributions look strikingly different. Additionally, we observe that the `fc`, `px_height` and `sc_w` features are right-skewed and a log-transformation might be beneficial.
+
+Additionally, we can have a look at the correlation matrix:
+
+```{python, fig-height = 8, fig-width = 8}
+train_dummies = pd.get_dummies(train, columns=factor_cols, drop_first=True)
+sns.clustermap(train_dummies.corr("spearman"), figsize=(15, 15), cmap="coolwarm", annot=True, fmt=".2f")
+```
+
+We observe that the `ram` feature is highly correlated with the `price_range` target variable. Additionally, the `px_height` and `px_width` features are highly correlated with each other, which was to be expected.
